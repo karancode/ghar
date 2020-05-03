@@ -1,0 +1,61 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ghar
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: github-pat-secret
+  namespace: ghar
+type: Opaque
+data:
+  GITHUB_PAT: dGhpcyBpcyBhIGR1bW15IHNlY3JldC4gcGxlYXNlIHNldCB5b3VyIG93biBnaXRodWIgcHJpdmF0ZSBhY2Nlc3MgdG9rZW4K
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: karancode-ghar-k8s-deployment
+  namespace: ghar
+  labels:
+    app: karancode-ghar-k8s
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: karancode-ghar-k8s
+  template:
+    metadata:
+      labels:
+        app: karancode-ghar-k8s
+    spec:
+      containers:
+      - name: runner
+        image: ghar-dind:1.0
+        imagePullPolicy: IfNotPresent
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - name: ssh-key-vol
+          readOnly: true
+          mountPath: "/etc/ssh-key-vol/"
+        env:
+        - name: GH_OWNER
+          value: karancode
+        - name: GHAR_REPO
+          value: ghar-k8s
+        - name: GITHUB_PAT
+          valueFrom:
+            secretKeyRef:
+              name: github-pat-secret
+              key: GITHUB_PAT
+        - name: SSH_PRIVATE_KEY
+          valueFrom:
+            secretKeyRef:
+              key: id_rsa
+              name: ssh-key-secret
+      volumes:
+      - name: ssh-key-vol
+        secret:
+          secretName: ssh-key-secret
