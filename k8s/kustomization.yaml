@@ -1,0 +1,5 @@
+---
+resources:
+  - ghar-namespace.yaml
+  - gh_pat-secret.yaml
+  - ghar-deployment.yaml
